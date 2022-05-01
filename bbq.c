@@ -29,9 +29,9 @@ typedef enum {
 static char* CoolingStateStr[] = { "Off", "Heat", "Cool", "Auto" };
 
 static CoolingState targetState     = 0;
-static double targetTemp            = 47.0;
-static CoolingState currentState    = CoolingState_Heat;
-static double currentTemp           = -0.0;
+static double targetTemp            = 15.0;
+static CoolingState currentState    = CoolingState_Off;
+static double currentTemp           = 1000.0;
 static bool End                     = false;
 
 static pthread_t heartTid;
@@ -61,7 +61,7 @@ void set_speed(int speed)
         int duty = range * speed / 100;
         pwmWrite(pwm_pin, duty);
         currentSpeed = speed;
-        if (debug) printf("speed : %d%%\n",speed);
+        if (debug) printf("set speed : %d%%\n",speed);
     }
 }
 
@@ -171,21 +171,31 @@ void * heartThread(void* arg)
     while(!End) {
         currentTemp = MAX6675GetTempC(max6675);
 
-        if(debug) printf("currentTemp:%0.2f,targetTemp:%0.2f\n", currentTemp, targetTemp);
+        if(debug) printf("currentTemp:%0.2f,targetTemp:%0.2f, currentState:%s,targetState:%s\n",
+            currentTemp, targetTemp, 
+            currentState == CoolingState_Off?"OFF":"ON", 
+            targetState  == CoolingState_Off?"OFF":"ON");
 
-        if(currentState != currentState) {
-            if(targetState == CoolingState_Off) {
-                set_speed(0);
-            }
+        if(currentState != targetState) {
             currentState = targetState;
+        }
+
+        if(targetState == CoolingState_Off) {
+            set_speed(0);
         }
         else if (currentTemp > targetTemp) {
             set_speed(0);
+        }
+        else if (currentTemp < targetTemp-50) {
+            set_speed(100);
         }
         else {
             double left = ((targetTemp - currentTemp) * 100.0) / targetTemp;
             if(left > 0.0) {
                 set_speed(left);
+            }
+            else {
+                set_speed(0);
             }
         }
 
