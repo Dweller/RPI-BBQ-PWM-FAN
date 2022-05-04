@@ -1,5 +1,4 @@
-/* Hardware PWM fan control */
-/* https://github.com/dstmar/WiringPi-PWM-Fan-Control */
+/* Hardware PWM fan control with Thermovouple input to calculate the fan speed */
 
 #include <wiringPi.h>
 #include <stdio.h>
